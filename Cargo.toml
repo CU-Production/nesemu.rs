@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 lazy_static = "1.4.0"
 bitflags = "2.0.2"
+
+rand = "0.8.5"
+sdl2 = { version = "0.35.2", features = ["bundled"] } 
