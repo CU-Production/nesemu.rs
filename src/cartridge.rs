@@ -3,6 +3,7 @@ const PRG_ROM_PAGE_SIZE: usize = 16384;
 const CHR_ROM_PAGE_SIZE: usize = 8192;
 
 #[derive(Debug, PartialEq)]
+#[allow(non_camel_case_types)]
 pub enum Mirroring {
     VERTICAL,
     HORIZONTAL,
