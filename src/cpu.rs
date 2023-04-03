@@ -253,10 +253,14 @@ impl CPU {
     }
 
     pub fn load(&mut self, program: Vec<u8>) {
+        // for i in 0..(program.len() as u16) {
+        //     self.mem_write(0x0600 + i, program[i as usize]);
+        // }
+        // self.mem_write_u16(0xFFFC, 0x0600);
         for i in 0..(program.len() as u16) {
-            self.mem_write(0x0600 + i, program[i as usize]);
+            self.mem_write(0x8600 + i, program[i as usize]);
         }
-        self.mem_write_u16(0xFFFC, 0x0600);
+        self.mem_write_u16(0xFFFC, 0x8600);
     }
 
     pub fn reset(&mut self) {
@@ -864,10 +868,11 @@ impl CPU {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::cartridge::test;
 
     #[test]
     fn test_0xa9_lda_immediate_load_data() {
-        let bus = Bus::new();
+        let bus = Bus::new(test::test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x05, 0x00]);
         assert_eq!(cpu.register_a, 5);
@@ -877,7 +882,7 @@ mod test {
 
     #[test]
     fn test_0xaa_tax_move_a_to_x() {
-        let bus = Bus::new();
+        let bus = Bus::new(test::test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load(vec![0xaa, 0x00]);
         cpu.reset();
@@ -889,7 +894,7 @@ mod test {
 
     #[test]
     fn test_5_ops_working_together() {
-        let bus = Bus::new();
+        let bus = Bus::new(test::test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00]);
 
@@ -898,7 +903,7 @@ mod test {
 
     #[test]
     fn test_inx_overflow() {
-        let bus = Bus::new();
+        let bus = Bus::new(test::test_rom());
         let mut cpu = CPU::new(bus);
         cpu.load(vec![0xe8, 0xe8, 0x00]);
         cpu.reset();
@@ -910,7 +915,7 @@ mod test {
 
     #[test]
     fn test_lda_from_memory() {
-        let bus = Bus::new();
+        let bus = Bus::new(test::test_rom());
         let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 
