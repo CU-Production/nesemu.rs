@@ -1,7 +1,6 @@
 use crate::bus::Bus;
 use crate::opcodes;
 use std::collections::HashMap;
-use crate::joypad::Joypad;
 
 bitflags! {
     /// # Status Register (P) http://wiki.nesdev.com/w/index.php/Status_flags
@@ -96,6 +95,7 @@ fn page_cross(addr1: u16, addr2: u16) -> bool {
     addr1 & 0xFF00 != addr2 & 0xFF00
 }
 
+#[allow(dead_code)]
 mod interrupt {
     #[derive(PartialEq, Eq)]
     pub enum InterruptType {
@@ -1079,7 +1079,7 @@ impl<'a> CPU<'a> {
                 0x04 | 0x44 | 0x64 | 0x14 | 0x34 | 0x54 | 0x74 | 0xd4 | 0xf4 | 0x0c | 0x1c
                 | 0x3c | 0x5c | 0x7c | 0xdc | 0xfc => {
                     let (addr, page_cross) = self.get_operand_address(&opcode.mode);
-                    let data = self.mem_read(addr);
+                    let _data = self.mem_read(addr);
                     if page_cross {
                         self.bus.tick(1);
                     }
@@ -1193,6 +1193,7 @@ impl<'a> CPU<'a> {
                     self.mem_write(mem_address, data)
                 }
 
+                #[allow(unreachable_patterns)]
                 _ => todo!(),
             }
 
@@ -1209,11 +1210,12 @@ impl<'a> CPU<'a> {
 mod test {
     use super::*;
     use crate::cartridge::test;
+    #[allow(unused_imports)]
     use crate::ppu::NesPPU;
 
     #[test]
     fn test_0xa9_lda_immediate_load_data() {
-        let bus = Bus::new(test::test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
+        let bus = Bus::new(test::test_rom(), |_, _| {});
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0x05, 0x00]);
         assert_eq!(cpu.register_a, 5);
@@ -1223,7 +1225,7 @@ mod test {
 
     #[test]
     fn test_0xaa_tax_move_a_to_x() {
-        let bus = Bus::new(test::test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
+        let bus = Bus::new(test::test_rom(), |_, _| {});
         let mut cpu = CPU::new(bus);
         cpu.register_a = 10;
         cpu.load_and_run(vec![0xa9, 0x0A, 0xaa, 0x00]);
@@ -1233,7 +1235,7 @@ mod test {
 
     #[test]
     fn test_5_ops_working_together() {
-        let bus = Bus::new(test::test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
+        let bus = Bus::new(test::test_rom(), |_, _| {});
         let mut cpu = CPU::new(bus);
         cpu.load_and_run(vec![0xa9, 0xc0, 0xaa, 0xe8, 0x00]);
 
@@ -1242,7 +1244,7 @@ mod test {
 
     #[test]
     fn test_inx_overflow() {
-        let bus = Bus::new(test::test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
+        let bus = Bus::new(test::test_rom(), |_, _| {});
         let mut cpu = CPU::new(bus);
         // cpu.register_x = 0xff;
         cpu.load_and_run(vec![0xa9, 0xFF, 0xaa, 0xe8, 0xe8, 0x00]);
@@ -1252,7 +1254,7 @@ mod test {
 
     #[test]
     fn test_lda_from_memory() {
-        let bus = Bus::new(test::test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
+        let bus = Bus::new(test::test_rom(), |_, _| {});
         let mut cpu = CPU::new(bus);
         cpu.mem_write(0x10, 0x55);
 

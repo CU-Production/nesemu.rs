@@ -15,21 +15,13 @@ pub mod render;
 #[path ="../joypad.rs"]
 pub mod joypad;
 
-use bus::Bus;
 use cartridge::Rom;
-use cpu::Mem;
-use cpu::CPU;
-use trace::trace;
 use render::frame::Frame;
 use render::palette;
-// use rand::Rng;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
 use sdl2::pixels::PixelFormatEnum;
-use sdl2::EventPump;
-// use std::time::Duration;
 
 #[macro_use]
 extern crate lazy_static;
@@ -37,6 +29,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate bitflags;
 
+#[allow(dead_code)]
 fn show_tile(chr_rom: &Vec<u8>, bank: usize, tile_n: usize) ->Frame {
     assert!(bank <= 1);
 
