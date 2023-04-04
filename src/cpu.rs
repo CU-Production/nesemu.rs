@@ -92,15 +92,15 @@ impl Mem for CPU<'_> {
         self.bus.mem_write_u16(addr, data)
     }
 }
-fn page_cross(addr1: u16, addr2 : u16) -> bool {
+fn page_cross(addr1: u16, addr2: u16) -> bool {
     addr1 & 0xFF00 != addr2 & 0xFF00
 }
-
 
 mod interrupt {
     #[derive(PartialEq, Eq)]
     pub enum InterruptType {
         NMI,
+        BRK,
     }
 
     #[derive(PartialEq, Eq)]
@@ -110,14 +110,22 @@ mod interrupt {
         pub(super) b_flag_mask: u8,
         pub(super) cpu_cycles: u8,
     }
+
     pub(super) const NMI: Interrupt = Interrupt {
         itype: InterruptType::NMI,
         vector_addr: 0xfffA,
         b_flag_mask: 0b00100000,
         cpu_cycles: 2,
     };
-}
 
+    pub(super) const BRK: Interrupt = Interrupt {
+        itype: InterruptType::BRK,
+        vector_addr: 0xfffe,
+        b_flag_mask: 0b00110000,
+        cpu_cycles: 1,
+    };
+
+}
 
 impl<'a> CPU<'a> {
     pub fn new<'b>(bus: Bus<'b>) -> CPU<'b> {
@@ -210,7 +218,6 @@ impl<'a> CPU<'a> {
         if page_cross {
             self.bus.tick(1);
         }
-
     }
 
     fn lda(&mut self, mode: &AddressingMode) {
@@ -376,7 +383,6 @@ impl<'a> CPU<'a> {
     fn or_with_register_a(&mut self, data: u8) {
         self.set_register_a(data | self.register_a);
     }
-
 
     fn sbc(&mut self, mode: &AddressingMode) {
         let (addr, page_cross) = self.get_operand_address(&mode);
@@ -649,7 +655,6 @@ impl<'a> CPU<'a> {
         self.bus.tick(interrupt.cpu_cycles);
         self.program_counter = self.mem_read_u16(interrupt.vector_addr);
     }
-
 
     pub fn run(&mut self) {
         self.run_with_callback(|_| {});
