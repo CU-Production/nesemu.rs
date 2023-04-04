@@ -15,6 +15,7 @@ bitflags! {
     ///  | +--------------- Overflow Flag
     ///  +----------------- Negative Flag
     ///
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct CpuFlags: u8 {
         const CARRY             = 0b00000001;
         const ZERO              = 0b00000010;
@@ -574,7 +575,7 @@ impl CPU {
     }
 
     fn plp(&mut self) {
-        self.status.bits = self.stack_pop();
+        *self.status.0.bits_mut() = self.stack_pop();
         self.status.remove(CpuFlags::BREAK);
         self.status.insert(CpuFlags::BREAK2);
     }
@@ -641,7 +642,7 @@ impl CPU {
         flag.set(CpuFlags::BREAK, interrupt.b_flag_mask & 0b010000 == 1);
         flag.set(CpuFlags::BREAK2, interrupt.b_flag_mask & 0b100000 == 1);
 
-        self.stack_push(flag.bits);
+        self.stack_push(flag.bits());
         self.status.insert(CpuFlags::INTERRUPT_DISABLE);
 
         self.bus.tick(interrupt.cpu_cycles);
@@ -845,7 +846,7 @@ impl CPU {
 
                 /* RTI */
                 0x40 => {
-                    self.status.bits = self.stack_pop();
+                    *self.status.0.bits_mut() = self.stack_pop();
                     self.status.remove(CpuFlags::BREAK);
                     self.status.insert(CpuFlags::BREAK2);
 

@@ -11,3 +11,7 @@ bitflags = "2.0.2"
 
 rand = "0.8.5"
 sdl2 = { version = "0.35.2", features = ["bundled"] } 
+
+[[bin]]
+name = "tiles_viewer"
+path = "src/bin/tiles_viewer.rs"
