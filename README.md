@@ -1,5 +1,10 @@
 # nesemu.rs
 
+<p align="center">
+  <img src="screenshots/Snipaste_2023-04-05_01-15-42.png" alt="" width="20%">
+  <img src="screenshots/Snipaste_2023-04-05_01-15-57.png" alt="" width="20%">
+</p>
+
 NES emulator is Rust
 
 # links
