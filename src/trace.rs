@@ -2,6 +2,7 @@ use crate::cpu::AddressingMode;
 use crate::cpu::Mem;
 use crate::cpu::CPU;
 use crate::opcodes;
+use crate::joypad::Joypad;
 use std::collections::HashMap;
 
 pub fn trace(cpu: &mut CPU) -> String {
@@ -139,7 +140,7 @@ mod test {
 
     #[test]
     fn test_format_trace() {
-        let mut bus = Bus::new(test_rom(), |ppu: &NesPPU| {});
+        let mut bus = Bus::new(test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
         bus.mem_write(100, 0xa2);
         bus.mem_write(101, 0x01);
         bus.mem_write(102, 0xca);
@@ -171,7 +172,7 @@ mod test {
 
     #[test]
     fn test_format_mem_access() {
-        let mut bus = Bus::new(test_rom(), |ppu: &NesPPU| {});
+        let mut bus = Bus::new(test_rom(), |ppu: &NesPPU, joypad: &mut Joypad| {});
         // ORA ($33), Y
         bus.mem_write(100, 0x11);
         bus.mem_write(101, 0x33);
