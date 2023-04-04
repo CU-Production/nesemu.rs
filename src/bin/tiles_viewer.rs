@@ -12,6 +12,8 @@ pub mod trace;
 pub mod ppu;
 #[path ="../render/mod.rs"]
 pub mod render;
+#[path ="../joypad.rs"]
+pub mod joypad;
 
 use bus::Bus;
 use cartridge::Rom;
