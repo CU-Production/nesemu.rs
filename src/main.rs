@@ -102,9 +102,9 @@ fn main() {
     let mut texture = creator.create_texture_target(PixelFormatEnum::RGB24, 256, 240).unwrap();
 
     // Snake game code
-    // let bytes: Vec<u8> = std::fs::read("snake.nes").unwrap();
-    let bytes: Vec<u8> = std::fs::read("mario.nes").unwrap();
-    // let bytes: Vec<u8> = std::fs::read("hello.nes").unwrap();
+    // let bytes: Vec<u8> = std::fs::read("roms/snake.nes").unwrap();
+    let bytes: Vec<u8> = std::fs::read("roms/mario.nes").unwrap();
+    // let bytes: Vec<u8> = std::fs::read("roms/hello.nes").unwrap();
     let rom = Rom::new(&bytes).unwrap();
     let mut frame = Frame::new();
 

@@ -128,7 +128,7 @@ fn main() {
         .unwrap();
 
     //load the game
-    let bytes: Vec<u8> = std::fs::read("Alter_Ego.nes").unwrap();
+    let bytes: Vec<u8> = std::fs::read("roms/Alter_Ego.nes").unwrap();
     let rom = Rom::new(&bytes).unwrap();
 
     let right_bank = show_tile_bank(&rom.chr_rom, 1);
