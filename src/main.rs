@@ -6,16 +6,21 @@ pub mod trace;
 pub mod ppu;
 pub mod render;
 pub mod joypad;
+pub mod apu;
+pub mod audio;
 
 use cpu::CPU;
 use bus::Bus;
 use cartridge::Rom;
 use render::frame::Frame;
 use ppu::NesPPU;
+use audio::AudioOutput;
 
 use minifb::{Key, Window, WindowOptions};
 
 use std::collections::HashMap;
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[macro_use]
 extern crate lazy_static;
@@ -41,6 +46,15 @@ fn main() {
 
     // Limit to max ~60 fps update rate
     window.set_target_fps(60);
+
+    // Initialize audio output
+    let audio_output = Rc::new(RefCell::new(
+        AudioOutput::new().unwrap_or_else(|e| {
+            eprintln!("Warning: Failed to initialize audio: {}", e);
+            eprintln!("Continuing without audio...");
+            panic!("Audio initialization failed");
+        })
+    ));
 
     // Load ROM
     let bytes: Vec<u8> = std::fs::read("roms/mario.nes").unwrap();
@@ -100,5 +114,19 @@ fn main() {
     let mut cpu = CPU::new(bus);
 
     cpu.reset();
-    cpu.run();
+    
+    // Run with audio
+    cpu.run_with_callback(move |cpu| {
+        // Extract audio samples from APU and queue them
+        let apu = cpu.bus.apu_mut();
+        let samples_available = apu.samples_available();
+        
+        if samples_available > 0 {
+            let mut audio = audio_output.borrow_mut();
+            for _ in 0..samples_available {
+                let sample = apu.get_sample();
+                audio.queue_sample(sample);
+            }
+        }
+    });
 }

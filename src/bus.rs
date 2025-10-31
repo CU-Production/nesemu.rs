@@ -3,6 +3,7 @@ use crate::cartridge::Rom;
 use crate::ppu::NesPPU;
 use crate::ppu::PPU;
 use crate::joypad::Joypad;
+use crate::apu::APU;
 
 //  _______________ $10000  _______________
 // | PRG-ROM       |       |               |
@@ -41,6 +42,7 @@ pub struct Bus<'call> {
     cpu_vram: [u8; 2048],
     prg_rom: Vec<u8>,
     ppu: NesPPU,
+    apu: APU,
 
     cycles: usize,
     gameloop_callback: Box<dyn FnMut(&NesPPU, &mut Joypad) + 'call>,
@@ -58,6 +60,7 @@ impl<'a> Bus<'a> {
             cpu_vram: [0; 2048],
             prg_rom: rom.prg_rom,
             ppu: ppu,
+            apu: APU::new(),
             cycles: 0,
             gameloop_callback: Box::from(gameloop_callback),
             joypad1: Joypad::new(),
@@ -80,9 +83,29 @@ impl<'a> Bus<'a> {
         self.ppu.tick(cycles *3);
         let nmi_after = self.ppu.nmi_interrupt.is_some();
         
+        // Tick APU for each CPU cycle
+        for _ in 0..cycles {
+            let prg_rom = &self.prg_rom;
+            self.apu.tick(|addr| {
+                if addr >= 0x8000 {
+                    let mut a = addr - 0x8000;
+                    if prg_rom.len() == 0x4000 && a >= 0x4000 {
+                        a = a % 0x4000;
+                    }
+                    prg_rom[a as usize]
+                } else {
+                    0
+                }
+            });
+        }
+        
         if !nmi_before && nmi_after {
             (self.gameloop_callback)(&self.ppu, &mut self.joypad1);
         }
+    }
+    
+    pub fn apu_mut(&mut self) -> &mut APU {
+        &mut self.apu
     }
 
     pub fn poll_nmi_status(&mut self) -> Option<u8> {
@@ -106,8 +129,7 @@ impl Mem for Bus<'_> {
             0x2007 => self.ppu.read_data(),
 
             0x4000..=0x4015 => {
-                //ignore APU 
-                0
+                self.apu.read_register(addr)
             }
 
             0x4016 => {
@@ -162,16 +184,16 @@ impl Mem for Bus<'_> {
             0x2007 => {
                 self.ppu.write_to_data(data);
             }
-            0x4000..=0x4013 | 0x4015 => {
-                //ignore APU 
+            0x4000..=0x4013 | 0x4015 | 0x4017 => {
+                self.apu.write_register(addr, data);
             }
 
             0x4016 => {
                 self.joypad1.write(data);
             }
 
-            0x4017 => {
-                // ignore joypad 2
+            0x4018..=0x401F => {
+                // ignore unused I/O registers
             }
 
             // https://wiki.nesdev.com/w/index.php/PPU_programmer_reference#OAM_DMA_.28.244014.29_.3E_write

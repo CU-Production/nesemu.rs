@@ -9,4 +9,5 @@ edition = "2021"
 lazy_static = "1.4.0"
 bitflags = "2.0.2"
 minifb = "0.27"
+cpal = "0.15"
 
