@@ -94,7 +94,12 @@ impl DmcChannel {
     }
     
     pub fn output(&self) -> u8 {
-        self.output_level
+        // Only output if DMC is enabled and has remaining bytes
+        if self.enabled && (self.bytes_remaining > 0 || !self.sample_buffer_empty) {
+            self.output_level
+        } else {
+            0
+        }
     }
 }
 

@@ -355,6 +355,11 @@ impl APU {
 
 // Audio mixing function
 fn mix_audio(pulse1: u8, pulse2: u8, triangle: u8, noise: u8, dmc: u8) -> f32 {
+    // Check if all channels are silent to avoid unnecessary calculations
+    if pulse1 == 0 && pulse2 == 0 && triangle == 0 && noise == 0 && dmc == 0 {
+        return 0.0;
+    }
+    
     let pulse_out = if pulse1 > 0 || pulse2 > 0 {
         95.88 / ((8128.0 / (pulse1 as f32 + pulse2 as f32)) + 100.0)
     } else {
