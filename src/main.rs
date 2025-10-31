@@ -13,9 +13,7 @@ use cartridge::Rom;
 use render::frame::Frame;
 use ppu::NesPPU;
 
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::pixels::PixelFormatEnum;
+use minifb::{Key, Window, WindowOptions};
 
 use std::collections::HashMap;
 
@@ -26,64 +24,75 @@ extern crate lazy_static;
 extern crate bitflags;
 
 fn main() {
-    // Init sdl2
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    let window = video_subsystem
-        .window("Nes Emu", (32.0 * 10.0) as u32, (32.0 * 10.0) as u32)
-        .position_centered()
-        .build().unwrap();
+    // Init minifb window
+    let mut window = Window::new(
+        "NES Emulator - minifb",
+        Frame::WIDTH,
+        Frame::HEIGHT,
+        WindowOptions {
+            resize: false,
+            scale: minifb::Scale::X2,
+            ..WindowOptions::default()
+        },
+    )
+    .unwrap_or_else(|e| {
+        panic!("Failed to create window: {}", e);
+    });
 
-    let mut canvas = window.into_canvas().present_vsync().build().unwrap();
-    let mut event_pump = sdl_context.event_pump().unwrap();
-    canvas.set_scale(2.0, 2.0).unwrap();
+    // Limit to max ~60 fps update rate
+    window.set_target_fps(60);
 
-    let creator = canvas.texture_creator();
-    let mut texture = creator.create_texture_target(PixelFormatEnum::RGB24, 256, 240).unwrap();
-
-    // Snake game code
-    // let bytes: Vec<u8> = std::fs::read("roms/mario.nes").unwrap();
-    let bytes: Vec<u8> = std::fs::read("roms/hello.nes").unwrap();
+    // Load ROM
+    let bytes: Vec<u8> = std::fs::read("roms/mario.nes").unwrap();
+    // let bytes: Vec<u8> = std::fs::read("roms/hello.nes").unwrap();
     let rom = Rom::new(&bytes).unwrap();
     let mut frame = Frame::new();
 
     let mut key_map = HashMap::new();
-    key_map.insert(Keycode::Down, joypad::JoypadButton::DOWN);
-    key_map.insert(Keycode::Up, joypad::JoypadButton::UP);
-    key_map.insert(Keycode::Right, joypad::JoypadButton::RIGHT);
-    key_map.insert(Keycode::Left, joypad::JoypadButton::LEFT);
-    key_map.insert(Keycode::Backspace, joypad::JoypadButton::SELECT);
-    key_map.insert(Keycode::Return, joypad::JoypadButton::START);
-    key_map.insert(Keycode::Z, joypad::JoypadButton::BUTTON_A);
-    key_map.insert(Keycode::X, joypad::JoypadButton::BUTTON_B);
+    key_map.insert(Key::Down, joypad::JoypadButton::DOWN);
+    key_map.insert(Key::Up, joypad::JoypadButton::UP);
+    key_map.insert(Key::Right, joypad::JoypadButton::RIGHT);
+    key_map.insert(Key::Left, joypad::JoypadButton::LEFT);
+    key_map.insert(Key::Backspace, joypad::JoypadButton::SELECT);
+    key_map.insert(Key::Enter, joypad::JoypadButton::START);
+    key_map.insert(Key::Z, joypad::JoypadButton::BUTTON_A);
+    key_map.insert(Key::X, joypad::JoypadButton::BUTTON_B);
 
     // run the game cycle
     let bus = Bus::new(rom, move |ppu: &NesPPU, joypad: &mut joypad::Joypad| {
         render::render(ppu, &mut frame);
-        texture.update(None, &frame.data, 256 * 3).unwrap();
+        
+        // Update window with frame buffer
+        window.update_with_buffer(&frame.data, Frame::WIDTH, Frame::HEIGHT)
+            .unwrap_or_else(|e| {
+                eprintln!("Failed to update window: {}", e);
+            });
 
-        canvas.copy(&texture, None, None).unwrap();
+        // Check if window is still open
+        if !window.is_open() || window.is_key_down(Key::Escape) {
+            std::process::exit(0);
+        }
 
-        canvas.present();
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. } | Event::KeyDown {
-                    keycode: Some(Keycode::Escape),
-                    ..
-                } => std::process::exit(0),
+        // Handle key presses
+        // Reset all button states first
+        for button in [
+            joypad::JoypadButton::DOWN,
+            joypad::JoypadButton::UP,
+            joypad::JoypadButton::RIGHT,
+            joypad::JoypadButton::LEFT,
+            joypad::JoypadButton::SELECT,
+            joypad::JoypadButton::START,
+            joypad::JoypadButton::BUTTON_A,
+            joypad::JoypadButton::BUTTON_B,
+        ] {
+            joypad.set_button_pressed_status(button, false);
+        }
 
-                Event::KeyDown { keycode, .. } => {
-                    if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
-                        joypad.set_button_pressed_status(*key, true);
-                    }
-                }
-                Event::KeyUp { keycode, .. } => {
-                    if let Some(key) = key_map.get(&keycode.unwrap_or(Keycode::Ampersand)) {
-                        joypad.set_button_pressed_status(*key, false);
-                    }
-                }
-
-                _ => { /* do nothing */ }
+        // Set pressed buttons
+        let keys = window.get_keys();
+        for key in keys {
+            if let Some(button) = key_map.get(&key) {
+                joypad.set_button_pressed_status(*button, true);
             }
         }
     });
